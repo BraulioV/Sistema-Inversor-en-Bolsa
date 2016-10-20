@@ -169,7 +169,6 @@
 (defrule cargarAnalisis
     ?f <- (IniciarSistema)
     =>
-    ; (open "../../../../../../DatosIbex35/Analisis.txt" mydata)
     (open "./Analisis.txt" mydata)
     (assert (SeguirLeyendo))
     (retract ?f)
@@ -232,7 +231,6 @@
 (defrule abrirFicheroSectores
     ?f <- (leerSectores)
     =>
-    ; (open "../../../../../../DatosIbex35/AnalisisSectores.txt" sectores)
     (open "./AnalisisSectores.txt" sectores)
     (assert (continuarConSectores))
     (retract ?f)
@@ -292,7 +290,6 @@
 (defrule abrirFicheroNoticias
     ?f <- (leerNoticias)
     =>
-    ; (open "../../../../../../DatosIbex35/Noticias.txt" noticias)
     (open "./Noticias.txt" noticias)
     (assert (continuarConNoticias))
     (retract ?f)
