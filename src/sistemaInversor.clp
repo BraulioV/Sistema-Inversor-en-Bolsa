@@ -682,3 +682,93 @@
     (retract ?f)
     (assert (inicioValoresInfr))    
 )
+
+;##############################################################################
+;#                 MODULO PARA DETECTAR VALORES INFRAVALORADOS                #
+;##############################################################################
+
+;---------------------------------------------------------------
+;   Regla que inicia el modulo
+;---------------------------------------------------------------
+
+(defrule inicioValInfr
+    ?f <- (inicioValoresInfr)
+    =>
+    (retract ?f)
+    (printout t "Detectando valores infravalorados..." crlf)
+    (assert (detectandoValoresInfr))
+)
+
+;---------------------------------------------------------------
+;   Regla que detecta los valores que tienen un PER Bajo y un
+;   RPD alto, que pasan a ser valores infravalorados.
+;---------------------------------------------------------------
+
+(defrule infravaloradoGeneral
+    (detectandoValoresInfr)
+    (Empresa 
+        (Nombre ?Nombre)
+        (Etiq_PER Bajo)
+        (Etiq_RPD Alto))
+    =>
+    (assert (Infravalorado ?Nombre (str-cat ?Nombre " es una empresa "
+            "infravalorada ya su PER es BAJO y su RPD es Alto, por lo que"
+            " pasa a ser una empresa infravalorada."))
+    )
+)
+
+;---------------------------------------------------------------
+;   Esta regla detecta los valores que han caido al menos un
+;   30% durante los últimos meses, que tienen un PER bajo,
+;   y que ademas han subido algo en el ultimo mes, pero no mucho
+;---------------------------------------------------------------
+
+(defrule detectarValoresInfravalorados
+    (detectandoValoresInfr)
+    (Empresa 
+        (Nombre ?Nombre) (Porcentaje_VarMen ?mes) (Porcentaje_VarTri ?tri)
+        (Porcentaje_VarSem ?semestre) (Porcentaje_Var12meses ?anio) (Etiq_PER Bajo))
+    (not (Infravalorado ?Nombre ?$))
+    ; Comprobamos si el valor ha caido al menos un 30% en el ultimo trimestre,
+    ; semestre o anio y que no ha subido mucho
+    (test (or (<= ?tri -30) (<= ?semestre -30) (<= ?anio -30)))
+    (test (> ?mes 0))
+    (test (< ?mes 10))
+    =>
+    (assert (Infravalorado ?Nombre (str-cat ?Nombre " es una empresa infravalorada"
+        " ya que su PER es Bajo y durante el ultimo trimestre, semestre o anio"
+        " ha caido al menos un 30% y ahora esta subiendo, aunque no demasiado")))
+)
+;---------------------------------------------------------------
+;   Esta regla detecta sin una empresa grande esta infravalorada.
+;   Si la empresa es grande, el RPD es alto y el PER Mediano, 
+;   ademas no esta bajando y se comporta mejor que su sector, 
+;   la empresa esta infravalorada
+;---------------------------------------------------------------
+
+(defrule detectarValorInfravaloradoGrandes
+    (detectandoValoresInfr)
+    (Empresa 
+        (Nombre ?Nombre)
+        (Etiq_RPD Alto)
+        (Etiq_PER Medio)
+        (Perd_5consec false)
+        (VRS5_5 false)
+        (Tamanio GRANDE))
+    =>
+    (assert (Infravalorado ?Nombre (str-cat ?Nombre " es grande, el RPD es alto"
+        " y el PER Medio, ademas no esta bajando y se comporta mejor que "
+        "su sector, la empresa esta infravalorada")))
+)
+
+;---------------------------------------------------------------
+;   Regla que da fin al modulo 3 y da paso al modulo
+;---------------------------------------------------------------
+
+(defrule finValoresInfr
+    (declare (salience -10))
+    ?f<-(detectandoValoresInfr)
+    =>
+    (retract ?f)
+    (assert (moduloValoresPeligrosos))
+)
