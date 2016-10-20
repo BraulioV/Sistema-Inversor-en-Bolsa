@@ -328,3 +328,52 @@
     (retract ?f)
     (assert (leerCartera))
 )
+
+;##############################################################################
+;#                MODULO PARA DETECTAR VALORES INESTABLES                     #
+;##############################################################################
+
+;---------------------------------------------------------------
+;   Regla que inicia el funcionamiento del modulo para
+;   detectar valores inestables
+;---------------------------------------------------------------
+(defrule moduloValoresInestables
+    ?f <- (detectarValoresInestables)
+    => 
+    (retract ?f)
+    (printout t "Detectando valores inestables..." crlf)
+    (assert (detectarValoresConstruccion))
+)
+
+;---------------------------------------------------------------
+;   Por definicion, los valores asociados al sector de la 
+;   construccion son valores inestables. Esta regla se 
+;   encarga de introducir esto en la base de hechos.
+;---------------------------------------------------------------
+
+(defrule valoresInestablesConstruccion
+    ?f<-(detectarValoresConstruccion)
+    (Empresa (Nombre ?nombreEmpresa) (Sector Construccion))
+    =>
+    
+    (assert (Inestable ?nombreEmpresa (str-cat "La empresa " ?nombreEmpresa 
+        " pasa a ser inestable porque pertenece al sector de la Construccion")))
+
+    (printout t (str-cat "La empresa " ?nombreEmpresa " pasa a ser "
+        "inestable porque pertenece al sector de la Construccion")  crlf)
+)
+
+;---------------------------------------------------------------
+;   Finaliza la carga de valores inestables en la construccion
+;   y da paso a la siguiente regla sobre los valores del sector
+;   servicios.
+;---------------------------------------------------------------
+
+(defrule finValoresConstruccion
+    (declare (salience -10))
+
+    ?f <- (detectarValoresConstruccion)
+    =>
+    (retract ?f)
+    (assert (detectarServiciosInestables))
+)
