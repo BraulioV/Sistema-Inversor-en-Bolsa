@@ -772,3 +772,78 @@
     (retract ?f)
     (assert (moduloValoresPeligrosos))
 )
+
+;##############################################################################
+;#                MODULO PARA DETECTAR VALORES PELIGROSOS                     #
+;##############################################################################
+
+;---------------------------------------------------------------
+;   Inicia el modulo para detectar valores peligrosos y
+;   da paso a las reglas de este modulo
+;---------------------------------------------------------------
+
+(defrule inicioModuloValoresPeligrosos
+    ?f <- (moduloValoresPeligrosos)
+    =>
+    (retract ?f)
+    (printout t "Detectando valores peligrosos..." crlf)
+    (assert (detectandoValPel))
+)
+
+;---------------------------------------------------------------
+;   Esta regla se encarga de aniadir al conocimiento de la base
+;   de hechos que un valor es peligroso si lleva 3 dias
+;   consecutivos bajando, es inestable y tenemos dinero 
+;   invertido en este valor
+;---------------------------------------------------------------
+
+(defrule detectarValorPeligroso3dias
+    (detectandoValPel)
+    (or (Inestable ?Nombre ?texto)
+        (Inestable Todo ?texto))
+    (Cartera (Nombre ?Nombre))
+    (Empresa (Nombre ?Nombre) (Perd_3consec true))
+    =>
+    (assert (Peligroso ?Nombre (str-cat ?Nombre " pasa a ser valor peligroso al 
+        llevar 3 dias consecutivos en perdidas y hay dinero invertido en " ?Nombre)))
+    
+    (printout t  ?Nombre " pasa a ser valor peligroso al llevar 3 dias 
+        consecutivos en perdidas y hay dinero invertido en " ?Nombre crlf)
+
+)
+
+;---------------------------------------------------------------
+;   Esta regla se encarga de aniadir al conocimiento de la base
+;   de hechos que un valor es peligroso si lleva 5 dias
+;   consecutivos bajando y tenemos dinero invertido 
+;   en este valor
+;---------------------------------------------------------------
+
+(defrule detectarValorPeligroso5dias
+    (detectandoValPel)
+    (Cartera (Nombre ?Nombre))
+    (Empresa (Nombre ?Nombre) (Sector ?sector) (VRS5_5 true))
+    ; (not (Peligroso ?Nombre ?$))
+    =>
+    
+    (assert (Peligroso ?Nombre (str-cat ?Nombre " pasa a ser valor peligroso al 
+        llevar 5 dias consecutivos en perdidas, hay dinero invertido en "?Nombre 
+        " y la variacion respecto al sector " ?sector " es mayor del 5%")))
+    
+    (printout t  ?Nombre " pasa a ser valor peligroso al llevar 5 dias 
+        consecutivos en perdidas, hay dinero invertido en "?Nombre " y la 
+        variacion respecto al sector " ?sector " es mayor del 5%" crlf)
+)
+
+;---------------------------------------------------------------
+;   Con esta regla finalizamos el modulo y damos paso al 
+;   modulo para detectar valores sobrevalorados
+;---------------------------------------------------------------
+
+(defrule finValPelig
+    (declare (salience -10))
+    ?f<-(detectandoValPel)
+    =>
+    (retract ?f)
+    (assert (RealizarPropuestas))
+)
