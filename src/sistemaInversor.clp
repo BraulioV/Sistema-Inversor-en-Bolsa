@@ -377,3 +377,217 @@
     (retract ?f)
     (assert (detectarServiciosInestables))
 )
+
+
+;---------------------------------------------------------------
+;   Por definicion, el sector servicios sera inestable si 
+;   la economia ("Ibex") esta bajando
+;---------------------------------------------------------------
+
+;##############################################################################
+;   * Como el experto no lo ha especificado, que la economia este bajando     ;
+;     significa que la economia lleva 5 dias consecutivos en perdidas *       ;
+;##############################################################################
+
+(defrule sectorServiciosInestablePorEconomiaBajando
+    (detectarServiciosInestables)
+    (Sector (Nombre Ibex) (Perd_5consec true))
+    (Empresa (Nombre ?nombreEmpresa) (Sector Servicios))
+    =>
+    (printout t "La empresa " ?nombreEmpresa " pasa a ser inestable porque "
+        "pertenece al sector Servicios y la economia esta bajando" crlf)
+    (assert (Inestable ?nombreEmpresa (str-cat "La empresa " ?nombreEmpresa 
+        " pasa a ser inestable porque pertenece al sector 
+        Servicios y la economia esta bajando")))
+)
+
+;---------------------------------------------------------------
+;   Termina la deteccion de los valores inestables por defecto
+;   del sector servicios y da paso a las siguientes reglas
+;
+;---------------------------------------------------------------
+
+(defrule finDeteccionServiciosInestables
+    (declare (salience -10))
+    ?f <- (detectarServiciosInestables)
+    =>
+    (retract ?f)
+    (printout t "Leyendo noticias..." crlf)
+    (assert (detectarNoticias))
+)
+
+;---------------------------------------------------------------
+;   Al producirse una mala noticia que afecta, si afecta a una 
+;   empresa, el valor pasa a ser inestable durante dos dias. En
+;   el caso de que le afecte al sector, este se volvera inestable
+;   y todos los valores de este sector, se volveran inestables
+;---------------------------------------------------------------
+
+
+;---------------------------------------------------------------
+;   Por definicion, el sector servicios sera inestable si 
+;   la economia ("Ibex") esta bajando
+;---------------------------------------------------------------
+
+;##############################################################################
+;   * Como el experto no lo ha especificado, que la economia este bajando     ;
+;     significa que la economia lleva 5 dias consecutivos en perdidas *       ;
+;##############################################################################
+
+(defrule sectorServiciosInestablePorEconomiaBajando
+    (detectarServiciosInestables)
+    (Sector (Nombre Ibex) (Perd_5consec true))
+    (Empresa (Nombre ?nombreEmpresa) (Sector Servicios))
+    =>
+    (printout t "La empresa " ?nombreEmpresa " pasa a ser inestable porque "
+        "pertenece al sector Servicios y la economia esta bajando" crlf)
+    (assert (Inestable ?nombreEmpresa (str-cat "La empresa " ?nombreEmpresa 
+        " pasa a ser inestable porque pertenece al sector 
+        Servicios y la economia esta bajando")))
+)
+
+;---------------------------------------------------------------
+;   Termina la deteccion de los valores inestables por defecto
+;   del sector servicios y da paso a las siguientes reglas
+;
+;---------------------------------------------------------------
+
+(defrule finDeteccionServiciosInestables
+    (declare (salience -10))
+    ?f <- (detectarServiciosInestables)
+    =>
+    (retract ?f)
+    (printout t "Leyendo noticias..." crlf)
+    (assert (detectarNoticias))
+)
+
+;---------------------------------------------------------------
+;   Al producirse una mala noticia que afecta, si afecta a una 
+;   empresa, el valor pasa a ser inestable durante dos dias. En
+;   el caso de que le afecte al sector, este se volvera inestable
+;   y todos los valores de este sector, se volveran inestables
+;---------------------------------------------------------------
+
+(defrule detectarNoticiasNegativas
+    (detectarNoticias)
+    (Noticia
+        (Sobre ?s)
+        (Tipo Mala)
+        (Antiguedad ?ant))
+    (or (Empresa (Nombre ?s))
+        (Sector (Nombre ?s)))
+    (test (<= ?ant 2))
+    =>
+    (assert (Inestable ?s (str-cat ?s " pasa a ser inestable durante dos dias "
+        "porque hay una noticia mala que le afecta")))
+    (printout t ?s " pasa a ser inestable durante dos dias porque hay una "
+        "noticia mala que le afecta" crlf)
+)
+
+;---------------------------------------------------------------
+;   Al producirse la mala noticia sobre el sector, esta regla 
+;   se encarga de introducir en la base de hechos el 
+;   conocimiento de que los valores asociados al sector se 
+;   han vuelto inestables
+;---------------------------------------------------------------
+
+(defrule sectorInestable
+    (detectarNoticias)
+    (Noticia
+        (Sobre ?s)
+        (Tipo Mala)
+        (Antiguedad ?ant))
+    (Empresa (Nombre ?nombre) (Sector ?s))
+    (test (<= ?ant 2))
+    =>
+    (assert (Inestable ?nombre (str-cat ?nombre " pasa a ser inestable "
+        "durante dos dias porque su sector ha pasado a ser inestable")))
+    (printout t (str-cat ?nombre " pasa a ser inestable durante dos dias porque "
+            "su sector ha pasado a ser inestable") crlf)
+)
+
+;---------------------------------------------------------------
+;   Cuando se ha producido una noticia que afecta a la economia
+;   todos los valores se vuelven inestables, por lo que 
+;   se introduce este conocimiento con el hecho 
+;               
+;                      (Inestable Todo ...)
+;---------------------------------------------------------------
+
+(defrule economiaInestable
+    (detectarNoticias)
+    (Noticia
+        (Sobre Ibex)
+        (Tipo Mala)
+        (Antiguedad ?ant))
+    (test (<= ?ant 2))
+    =>
+    
+    (assert (Inestable Todo (str-cat "Toda la economia ha pasado a ser "
+        " inestable durante 2 dias al haber una mala noticia sobre el Ibex")))
+    
+    (printout t "Toda la economia ha pasado a ser inestable durante 2 dias al "
+        "haber una mala noticia sobre el Ibex" crlf)
+)
+
+
+;---------------------------------------------------------------
+;   Esta regla se encarga de eliminar de la base de hechos los
+;   valores inestables al encontrarse una buena noticia sobre
+;   estos en la base de hechos, siempre y cuando esta noticia 
+;   tenga menos de dos dias de tiempo
+;---------------------------------------------------------------
+
+(defrule detectarNoticiasPositivas
+    (declare (salience -1))
+    (detectarNoticias)
+    (Noticia
+        (Sobre ?s)
+        (Tipo Buena)
+        (Antiguedad ?ant))
+    (or (Empresa (Nombre ?s))
+        (Sector (Nombre ?s)))
+    ?f <- (Inestable ?s ?texto)
+    (test (<= ?ant 2))
+    =>
+    (retract ?f)
+    (printout t ?s " deja de ser inestable porque existe una noticia 
+        buena lo referencia con de hace " ?ant " dias" crlf)
+)
+
+;---------------------------------------------------------------
+;   Al producirse una buena noticia que afecta a un sector,
+;   los valores asociados a este sector dejan de ser 
+;   inestables durante dos dias
+;---------------------------------------------------------------
+
+(defrule sectorEstable
+    (declare (salience -1))
+    (detectarNoticias)
+    (Noticia
+        (Sobre ?s)
+        (Tipo Buena)
+        (Antiguedad ?ant))
+    (Empresa (Nombre ?nombre) (Sector ?s))
+    ?f <- (Inestable ?nombre ?texto)
+    (test (<= ?ant 2))
+    =>
+    (retract ?f)
+    (printout t ?nombre " deja de ser inestable porque existe 
+        una noticia buena sobre su sector" crlf)
+)
+
+;---------------------------------------------------------------
+;   Esta regla se encarga de dar fin al modulo de deteccion de
+;   valores inestables y da paso al modulo de deteccion de 
+;   valores peligrosos
+;---------------------------------------------------------------
+
+(defrule finModuloInestables
+    (declare (salience -10))
+    ?f<-(detectarNoticias)
+    =>
+    (retract ?f)
+    (assert (inicioValSobr))
+)
+
