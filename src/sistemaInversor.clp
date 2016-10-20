@@ -138,3 +138,196 @@
     ; Explicación que genera el sistema 
     (slot Explicacion)
 )
+
+;##############################################################################
+;#                       MODULO INICIAL DEL PROGRAMA                          #
+;#                                                                            #
+;#     Cargar el fichero de datos sobre el cierre de la bolsa y dar paso al   #
+;#                         resto de modulos del sistema                       #
+;##############################################################################
+
+;---------------------------------------------------------------
+; Funcion que inicia el sistema
+;   - Inserta en la base de hechos IniciarSistema para
+;     poder disparar la regla que carga los datos del cierre
+;
+;   El salience es necesario para obligar a que sea la primera
+;   regla que se ejecute 
+;---------------------------------------------------------------
+
+(defrule start
+    (declare (salience 100))
+    => 
+    (printout t crlf "¡Bienvenido!" crlf)
+    (assert (IniciarSistema))
+)
+
+;---------------------------------------------------------------
+; Funcion para abrir el fichero de datos del cierre
+;---------------------------------------------------------------
+
+(defrule cargarAnalisis
+    ?f <- (IniciarSistema)
+    =>
+    ; (open "../../../../../../DatosIbex35/Analisis.txt" mydata)
+    (open "./Analisis.txt" mydata)
+    (assert (SeguirLeyendo))
+    (retract ?f)
+)
+
+;---------------------------------------------------------------
+; Funcion que lee los datos y los carga en la base de hechos
+;---------------------------------------------------------------
+
+(defrule leerValoresCierreFromFile
+    ?f <- (SeguirLeyendo)
+    =>
+    (bind ?valor (read mydata))
+    (retract ?f)
+    (if (neq ?valor EOF) then
+        (assert (Empresa
+                    (Nombre ?valor)
+                    (Precio (read mydata))
+                    (Var_dia (read mydata))
+                    (Capitalizacion (read mydata))
+                    (PER (read mydata))
+                    (RPD (read mydata))
+                    (Tamanio (read mydata))
+                    (Porcentaje_IBEX (read mydata))
+                    (Etiq_PER (read mydata))
+                    (Etiq_RPD (read mydata))
+                    (Sector (read mydata))
+                    (Porcentaje_Var_5_Dias (read mydata))
+                    (Perd_3consec (read mydata))
+                    (Perd_5consec (read mydata))
+                    (Perd_VarRespSector5Dias (read mydata))
+                    (VRS5_5 (read mydata))
+                    (Porcentaje_VarMen (read mydata))
+                    (Porcentaje_VarTri (read mydata))
+                    (Porcentaje_VarSem (read mydata))
+                    (Porcentaje_Var12meses (read mydata)))
+        )
+        (assert (SeguirLeyendo)))
+)
+
+;---------------------------------------------------------------
+;   Funcion que cierra el fichero sobre el cierre y da paso
+;   al modulo que carga los datos sobre los sectores
+;---------------------------------------------------------------
+
+(defrule cerrarFicheroValoresCierre
+    =>
+    (close mydata)
+    (assert (leerSectores))
+)
+
+;##############################################################################
+;#                   MODULO PARA LEER LOS DATOS DE LOS SECTORES               #
+;##############################################################################
+
+;---------------------------------------------------------------
+; Funcion para abrir el fichero
+;---------------------------------------------------------------
+
+(defrule abrirFicheroSectores
+    ?f <- (leerSectores)
+    =>
+    ; (open "../../../../../../DatosIbex35/AnalisisSectores.txt" sectores)
+    (open "./AnalisisSectores.txt" sectores)
+    (assert (continuarConSectores))
+    (retract ?f)
+)
+
+;---------------------------------------------------------------
+; Funcion que lee los datos y los carga en la base de hechos
+;---------------------------------------------------------------
+
+(defrule LeerValoresSectoresFromFile
+    ?f <- (continuarConSectores)
+    =>
+    (bind ?valor (read sectores))
+    (retract ?f)
+    (if (neq ?valor EOF) then
+        (assert (Sector
+                    (Nombre ?valor)
+                    (Var_dia (read sectores))
+                    (Capitalizacion (read sectores))
+                    (PER (read sectores))
+                    (RPD (read sectores))
+                    (Porcentaje_IBEX (read sectores))
+                    (Porcentaje_Var_5_Dias(read sectores))
+                    (Perd_3consec(read sectores))
+                    (Perd_5consec(read sectores))
+                    (Porcentaje_VarMen (read sectores))
+                    (Porcentaje_VarTri (read sectores))
+                    (Porcentaje_VarSem (read sectores))
+                    (Porcentaje_Var12meses (read sectores)))
+        )
+        (assert (continuarConSectores))
+        else
+            (assert (finalizarSectores))
+    )
+)
+
+;---------------------------------------------------------------
+;   Funcion que cierra el fichero sobre los sectores y da paso
+;   al modulo que carga las noticias
+;---------------------------------------------------------------
+
+(defrule cerrarFicheroSectores
+    ?f <- (finalizarSectores)
+    =>
+    (close sectores)
+    (assert (leerNoticias))
+)
+
+;##############################################################################
+;#                MODULO PARA LEER LOS DATOS DE LA NOTICIAS                   #
+;##############################################################################
+
+;---------------------------------------------------------------
+; Funcion para abrir el fichero
+;---------------------------------------------------------------
+
+(defrule abrirFicheroNoticias
+    ?f <- (leerNoticias)
+    =>
+    ; (open "../../../../../../DatosIbex35/Noticias.txt" noticias)
+    (open "./Noticias.txt" noticias)
+    (assert (continuarConNoticias))
+    (retract ?f)
+)
+
+;---------------------------------------------------------------
+; Funcion que lee los datos y los carga en la base de hechos
+;---------------------------------------------------------------
+
+(defrule LeerNoticiasFromFile
+    ?f <- (continuarConNoticias)
+    =>
+    (bind ?valor (read noticias))
+    (retract ?f)
+    (if (neq ?valor EOF) then
+        (assert (Noticia
+                    (Sobre ?valor)
+                    (Tipo (read noticias))
+                    (Antiguedad (read noticias))
+        ))
+        (assert (continuarConNoticias))
+        else
+            (assert (finLeerNoticias))
+    )
+)
+
+;---------------------------------------------------------------
+;   Funcion que cierra el fichero sobre las noticias y da paso
+;   al modulo que carga la cartera
+;---------------------------------------------------------------
+
+(defrule cerrarFicheroNoticias
+    ?f <- (finLeerNoticias)
+    =>
+    (close noticias)
+    (retract ?f)
+    (assert (leerCartera))
+)
