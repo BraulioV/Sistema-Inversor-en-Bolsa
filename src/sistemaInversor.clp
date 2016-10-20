@@ -591,3 +591,94 @@
     (assert (inicioValSobr))
 )
 
+;##############################################################################
+;#                 MODULO PARA DETECTAR VALORES SOBREVALORADOS                #
+;##############################################################################
+
+;---------------------------------------------------------------
+;   Regla que inicia el modulo
+;---------------------------------------------------------------
+
+(defrule inicioValSobr
+    ?f <- (inicioValSobr)
+    =>
+    (retract ?f)
+    (printout t "Detectando valores sobrevalorados..." crlf)
+    (assert (detectandoValSobr))
+
+)
+
+; ---------------------------------------------------------------
+;   Esta regla se encarga de forma general, de aniadir los
+;   valores que esten sobrevalorados debido a un PER alto 
+;   y un RPD Bajo
+; ---------------------------------------------------------------
+
+(defrule detectarValoresSobrevaloradosGeneral
+    (detectandoValSobr)
+    (Empresa (Nombre ?N) (Etiq_PER Alto) (Etiq_RPD Bajo))
+    =>
+    (assert (Sobrevalorado ?N (str-cat ?N " es un valor sobrevalorado ya que "
+        " como norma general, los valores con PER Alto y RPD Bajo, estan "
+        "sobrevalorados por definicion, como es este caso")))
+)
+
+;---------------------------------------------------------------
+;   Esta regla es mas especifica que la anterior y se
+;   aplica sobre aquellas empresas con un tamanio PEQUENIA
+;   que tengan un PER Alto, o un PER Mediano y un RPD Bajo
+;---------------------------------------------------------------
+
+(defrule detectarValoresSobrevaloradosEmpresaPequenia
+    (detectandoValSobr)
+    (or (Empresa (Nombre ?N) 
+        (Tamanio PEQUENIA)
+        (Etiq_PER Alto)
+        (Etiq_RPD Bajo))
+
+        (Empresa (Nombre ?N) 
+        (Tamanio PEQUENIA)
+        (Etiq_PER Medio)
+        (Etiq_RPD Bajo))
+    )
+    =>
+    (assert (Sobrevalorado ?N (str-cat ?N " es un valor de una empresa PEQUENIA"
+        " sobrevalorado ya que su PER es Alto, o bien su PER es Medio y "
+        "su RPD es Bajo")))
+)
+
+;---------------------------------------------------------------
+;   Esta regla es similar a la anterior, pero aplicada a las
+;   empresas con un tamanio GRANDE, y que tengan un RPD Bajo y 
+;   un PER, Medio o Alto; o tengan un RPD Medio y un
+;   PER Alto
+;---------------------------------------------------------------
+
+(defrule detectarValoresSobrevaloradosEmpresaGrande
+    (detectandoValSobr)
+    (or (Empresa (Nombre ?N) (Etiq_RPD Bajo) (Etiq_PER Medio) (Tamanio GRANDE))
+        (Empresa (Nombre ?N) (Etiq_RPD Bajo) (Etiq_PER Alto) (Tamanio GRANDE))
+        (Empresa (Nombre ?N) (Etiq_RPD Medio) (Etiq_PER Alto) (Tamanio GRANDE))
+    )
+    =>
+    (assert (Sobrevalorado ?N (str-cat ?N " es un valor de una empresa GRANDE sobrevalorado ya "
+        "que su RPD es Bajo y su PER es Medio o Alto, o bien su RPD es Medio "
+        "y su PER es Alto")))
+
+    (printout (str-cat ?N " es un valor de una empresa GRANDE sobrevalorado ya "
+        "que su RPD es Bajo y su PER es Medio o Alto, o bien su RPD es Medio "
+        "y su PER es Alto"))
+)
+
+;---------------------------------------------------------------
+;   Regla que da fin a este modulo y empieza con el modulo
+;   encargado de detectar valores infravalorados
+;---------------------------------------------------------------
+
+(defrule finModValSobr
+    (declare (salience -10))
+    ?f<-(detectandoValSobr)
+    =>
+    (retract ?f)
+    (assert (inicioValoresInfr))    
+)
