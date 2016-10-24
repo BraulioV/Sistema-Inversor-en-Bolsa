@@ -1020,3 +1020,245 @@
     (retract ?f)
     (assert (mostrarPropuestas))
 )
+
+
+;##############################################################################
+;#           MODULO PARA MOSTRAR LAS MEJORES PROPUESTAS OBTENIDAS             #
+;##############################################################################
+
+;----------------------------------------------------------------------
+;   Inicializa el modulo. Esta regla inserta el hecho que indica buscar
+;   las mejores propuestas, e inicializa el maximo valor con un hecho
+;----------------------------------------------------------------------
+
+
+(defrule mostrarMejoresPropuestas
+    ?f <- (mostrarPropuestas)
+    =>
+    (retract ?f)
+    (assert (buscarMejores))
+    (assert (propuestasMostradas 0))
+    (assert (Maximo -99999999.0))
+    
+)
+
+;----------------------------------------------------------------------
+; Regla que calcula la mejor propuesta
+;----------------------------------------------------------------------
+
+(defrule mejorPropuesta
+    (declare (salience 5))
+    (buscarMejores)
+    (Propuesta
+        (Tipo ?t)
+        (Nombre1 ?n)
+        (Nombre2 ?n2)
+        (RE ?RE)
+        (Explicacion ?exp)
+    )
+    (Maximo ?m)
+    (propuestasMostradas ?p)
+    ?r <- (Maximo ?m)
+    (test (> ?RE ?m))
+    (test (< ?p 5))
+    =>
+    (retract ?r)
+    (assert (Maximo ?RE))
+)
+
+;----------------------------------------------------------------------
+;   Regla que se encarga de mostrar las propuestas por pantalla
+;   
+;   En estas dos reglas, el uso del salience está justificado a 
+;   que el experto dijo mostrar las propuestas de mayor a menor
+;   Rendimiento Esperado y por ello, se usa el salience para la 
+;   implementación de este conocimiento
+;----------------------------------------------------------------------
+
+(defrule imprimirPropuestas
+    (declare (salience 3))
+    (buscarMejores)
+    ?p <- (propuestasMostradas ?n)
+    ?max <- (Maximo ?m)
+    ?propuesta <- (Propuesta 
+        (Tipo ?t) 
+        (Nombre1 ?nombre1) 
+        (Nombre2 ?nombre2) 
+        (RE ?m) 
+        (Explicacion ?ex)
+    )
+    (test (< ?n 5))
+    =>
+    (if (eq ?t IntercambiarAMasRentable) then
+        (printout t crlf (+ ?n 1) " Propongo intercambiar las acciones de " ?nombre2
+            " por acciones de " ?nombre1 " porque " ?ex crlf "-- RENDIMIENTO ESPERADO ==> "
+            ?m " --" crlf)
+        (assert (Intercambiar ?nombre2 ?nombre1 ?m (+ ?n 1)))
+        else 
+            (if (eq ?t ComprarInfravalorado) then
+                (printout t crlf (+ ?n 1) " Propongo comprar acciones de " ?nombre1
+                    " porque " ?ex crlf "-- RENDIMIENTO ESPERADO ==> "
+                    ?m " --" crlf)
+                (assert (ComprarInfravalorado ?nombre1 ?m (+ ?n 1)))
+
+                else
+                    (if (eq ?t Vender_Peligroso) then
+                        (printout t crlf (+ ?n 1) " Propongo vender acciones de " ?nombre1
+                            " porque " ?ex crlf "-- RENDIMIENTO ESPERADO ==> " ?m " --" crlf)
+
+                        (assert (Vender ?nombre1 ?m (+ ?n 1)))
+
+                        else
+                            (if (eq ?t Vender_Sobrevalorado) then
+                                (printout t crlf (+ ?n 1) " Propongo vender acciones de " ?nombre1
+                                    " porque " ?ex crlf "-- RENDIMIENTO ESPERADO ==> " ?m " --" crlf)
+
+                                    (assert (Vender ?nombre1 ?m (+ ?n 1)))
+                            )
+                        
+                    )
+                
+            )
+    )
+    (retract ?max)
+    (retract ?propuesta)
+    (assert (Maximo -99999999.0))
+    (retract ?p)
+    (assert (propuestasMostradas (+ ?n 1)))
+)
+
+;----------------------------------------------------------------------
+;   Regla que se encarga de obtener la decisión del usuario
+;----------------------------------------------------------------------
+
+(defrule preguntarPorPropuestas
+    (declare (salience 2))
+    ?f <- (buscarMejores)
+    (propuestasMostradas ?pM)
+    (test (<= ?pM 5))
+    =>
+    (printout t (+ ?pM 1) " Para aplicar alguna propuesta selecciona un numero" crlf)
+    (printout t "O pulsar " (+ ?pM 1) " para salir" crlf)
+    (printout t "Desea aplicar alguna de estas propuestas?: " crlf)
+    (bind ?propuesta (read))
+    (retract ?f)
+    (assert (eleccionUsuario ?propuesta))
+)
+
+;----------------------------------------------------------------------
+;   Regla que se encarga de realizar la venta del valor mostrado 
+;   en la salida por pantalla y que ha seleccionado el usuario
+;----------------------------------------------------------------------
+
+(defrule aplicarVenta
+
+    ?eleccion <- (eleccionUsuario ?e)
+    ?venta <- (Vender ?nombre ?RE ?e)
+    ?dineroDisponible <- (Cartera (Nombre DISPONIBLE) (Acciones ?a) (ValorActual ?v))
+    ?valorEmpresa <- (Cartera (Nombre ?nombre) (Acciones ?nA) (ValorActual ?vEmp))
+    (test (< ?e 6))
+    (test (> ?e 0))
+    =>
+    (assert (Cartera 
+        (Nombre DISPONIBLE) 
+        (Acciones (+ ?a ?vEmp))
+        (ValorActual (+ ?v ?vEmp))))
+    (retract ?venta)
+    (retract ?dineroDisponible)
+    (retract ?valorEmpresa)
+    (retract ?eleccion)
+    (printout t crlf "###############################################################################" crlf crlf)
+    (printout t "Todas las acciones de la empresa " ?nombre " han sido vendidas" crlf)
+    (printout t "El dinero disponible actual es de " (+ ?v ?vEmp) crlf)
+    (printout t crlf "###############################################################################" crlf crlf)
+    (assert (ActualizarPropuestas))
+)
+
+;----------------------------------------------------------------------
+;   Regla que se encarga de intercambiar las acciones de un valor 
+;   por el otro mostrado en la salida
+;----------------------------------------------------------------------
+
+(defrule intercambiarValores
+    ?eleccion <- (eleccionUsuario ?e)
+    ?intercambio <- (Intercambiar ?miEmpresa ?nuevaEmpresa ?RE ?e)
+    ?valorEmpresa <- (Cartera (Nombre ?miEmpresa) (Acciones ?a) (ValorActual ?v))
+    ?dineroDisponible <- (Cartera (Nombre DISPONIBLE) (Acciones ?aCash) (ValorActual ?vCash))
+    (Empresa (Nombre ?nuevaEmpresa) (Precio ?p))
+    (test (< ?e 6))
+    (test (> ?e 0))
+    =>
+    (printout t crlf "###############################################################################" crlf crlf)
+    (assert (Cartera (Nombre ?nuevaEmpresa) (Acciones ?a) (ValorActual (* ?p ?a))))
+    (assert (Cartera 
+            (Nombre DISPONIBLE) 
+            (Acciones (- (+ ?aCash ?v) (* ?p ?a))) 
+            (ValorActual (- (+ ?vCash ?v) (* ?p ?a))) 
+        )
+    )
+    (printout t "Todas las acciones de " ?miEmpresa " se han cambiado por las de " ?nuevaEmpresa crlf)
+    (printout t "El dinero disponible actual es de " (- (+ ?vCash ?v) (* ?p ?a)) crlf)
+    (printout t crlf "###############################################################################" crlf crlf)
+    (retract ?eleccion)
+    (retract ?intercambio)
+    (retract ?valorEmpresa)
+    (retract ?dineroDisponible)
+    (assert (ActualizarPropuestas))
+
+)
+
+;----------------------------------------------------------------------
+;   Regla que se encarga de comprar el valor elegido
+;----------------------------------------------------------------------
+
+(defrule comprarValor
+    ?eleccion <- (eleccionUsuario ?e)
+    ?compra <- (ComprarInfravalorado ?nombre ?RE ?e)
+    ?dineroDisponible <- (Cartera (Nombre DISPONIBLE) (Acciones ?aCash) (ValorActual ?vCash))
+    (Empresa (Nombre ?nombre) (Precio ?precio))
+    (test (< ?e 6))
+    (test (> ?e 0))
+    =>
+    (printout t crlf "###############################################################################" crlf crlf)
+    (printout t "Al realizar una compra de valores, recomiendo invertir un 5% del dinero en efectivo, "
+        " para evitar tenerlo todo invertido en un mismo valor." crlf)
+    (assert (Cartera 
+            (Nombre ?nombre) 
+            (Acciones (* ?vCash 0.05)) 
+            (ValorActual (* ?precio (* ?vCash 0.05))) 
+        )
+    )
+    (printout T "Se ha añadido " ?nombre " a la cartera con un total de " (* ?vCash 0.05)
+        " acciones con un valor de " (* ?precio (* ?vCash 0.05)) crlf)
+    (retract ?eleccion)
+    (retract ?compra)
+    (retract ?dineroDisponible)
+    (assert (Cartera 
+            (Nombre DISPONIBLE) 
+            (Acciones (- ?aCash (* ?precio (* ?vCash 0.05)))) 
+            (ValorActual (- ?vCash (* ?precio (* ?vCash 0.05)))) 
+        )
+    )
+    (printout t "El dinero disponible actual es de " (- ?vCash (* ?precio (* ?vCash 0.05))) crlf)
+    (printout t crlf "###############################################################################" crlf crlf)
+    (assert (ActualizarPropuestas))
+)
+
+;----------------------------------------------------------------------
+;   Regla que se encarga de actualizar las propuestas del sistema en
+;   función de la propuesta elegida
+;----------------------------------------------------------------------
+
+(defrule actualizarPropuestasDelSistema
+    (declare (salience -10))
+    ?f <-(ActualizarPropuestas)
+    (or ?hecho <- (Propuesta (Tipo ?t) (Nombre1 ?n1) (Nombre2 ?n2) (RE ?re) (Explicacion ?ex))
+        ?hecho <- (Vender ?nombre ?RE ?e)
+        ?hecho <- (Intercambiar ?emp1 ?emp2 ?RE ?exp)
+        ?hecho <- (ComprarInfravalorado ?nombre ?RE ?e)
+        ?hecho <- (Peligroso ?nombre ?explicacion)
+        ?hecho <- (propuestasMostradas ?n)
+    )
+    => 
+    (retract ?hecho)
+)
