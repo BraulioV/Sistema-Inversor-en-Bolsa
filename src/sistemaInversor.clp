@@ -847,3 +847,176 @@
     (retract ?f)
     (assert (RealizarPropuestas))
 )
+
+;##############################################################################
+;#                 MODULO PARA LA REALIZACION DE PROPUESTAS                   #
+;##############################################################################
+
+;---------------------------------------------------------------
+;   Con esta regla iniciamos el modulo encargado de obtener
+;   las propuestas que se mostrarán al usuario
+;---------------------------------------------------------------
+
+(defrule inicioRealizacionPropuestas
+    ?f<-(RealizarPropuestas)
+    =>
+    (retract ?f)
+    (assert (obtenerPropuestas))
+)
+
+;---------------------------------------------------------------
+;   Esta regla genera propuestas nuevas debido a que 
+;   existe un valor peligroso y se recomienda venderlo
+;---------------------------------------------------------------
+
+(defrule propuestaVenderEmpresaPeligrosa
+    (obtenerPropuestas)
+    ; Existe una empresa
+    (Empresa (Nombre ?nombre) (Porcentaje_VarMen ?varMenEmpresa) (Sector ?nombreSector)
+        (RPD ?rpd))
+    ; Detectada como valor peligroso
+    (Peligroso ?nombre ?explicacion)
+    (Sector (Nombre ?nombreSector) (Porcentaje_VarMen ?varMenSector))
+    ; Comprobamos si esta bajando en el ultimo mes
+    (test (< ?varMenEmpresa 0))
+    ; Y si la variacion respecto a su sector es menor del 3%
+    (test (< (- (abs ?varMenEmpresa) (abs ?varMenSector)) -3))
+    =>
+    (assert (Propuesta 
+        (Tipo Vender_Peligroso) 
+        (Nombre1 ?nombre) 
+        (Nombre2 NA)
+        (RE (- 20 (* ?rpd 100))) 
+        (Explicacion (str-cat "La empresa " ?nombre " es peligrosa porque es un"
+                    " valor peligroso, y esta entrando en tendencia bajista respecto a"
+                    " su sector. Segun mi estimacion, existe una probabilidad no "
+                    "despreciable de que pueda caer al cabo del anio un 20%, aunque"
+                    " produzca un " ?rpd "% por dividendos perderiamos un " (- 20 ?rpd) "%")))
+    )
+)
+;----------------------------------------------------------------------
+;   Con esta regla proponemos invertir en empresas infravaloradas
+;   Si una empresa esta infravalorada  y el usuario tiene  dinero para 
+;   invertir proponer invertir el dinero en  las acciones de la empresa. 
+;                   RE=(PERMedio-PER)*100/(5*PER)+RPD 
+;----------------------------------------------------------------------
+
+
+(defrule propuestaInvertirInfravaloradas
+    (obtenerPropuestas)
+    (Empresa 
+        (Nombre ?nombre)
+        (RPD ?RPD)
+        (PER ?PER)
+        (Sector ?nombreSector))
+    (Sector 
+        (Nombre ?nombreSector)
+        (PER ?PERMedio))
+    (Infravalorado ?nombre ?explicacion)
+    (Cartera
+        (Nombre DISPONIBLE)
+        (Acciones ?v))
+    (not (Cartera (Nombre ?nombre)))
+    (test (> ?v 0))
+    =>
+    (if (not (eq ?PER 0)) then
+        (assert (Propuesta
+            (Tipo ComprarInfravalorado)
+            (Nombre1 ?nombre)
+            (Nombre2 NA)
+            (RE (+ (/ (* (- ?PERMedio ?PER) 100) (* 5 ?PER)) (* ?RPD 100)))
+            (Explicacion (str-cat ?nombre " esta infravalorada y seguramente el PER tienda"
+                        " al PER medio en 5 anios, con lo que se deberia revalorizar un "
+                        (/ (* (- ?PERMedio ?PER) 100) (* 5 ?PER)) " anual a lo que" 
+                        " habria que sumar el " (* ?RPD 100) "% RPD de beneficios por dividendos"))
+                )
+        )
+    )
+)
+
+;----------------------------------------------------------------------
+;   En esta regla, se proponen vender valores de empresas sobrevaloradas 
+;   Si una empresa de mi cartera esta sobrevalorada y el rendimiento 
+;   por anio < 5 + precio dinero, proponer vender las acciones de 
+;   esa empresa.
+;               RE = -RPD+(PER-PERMedioSector)/(5*PER)
+;----------------------------------------------------------------------
+
+(defrule propuestaVenderSobrevaloradas
+    (obtenerPropuestas)
+    (Sobrevalorado ?nombre ?explicacion)
+    (Cartera (Nombre ?nombre) (ValorActual ?v))
+    (Empresa 
+        (Nombre ?nombre)
+        (RPD ?RPD)
+        (PER ?PER)
+        (Sector ?nombreSector) 
+        (Porcentaje_Var12meses ?varAnual)
+    )
+    (Sector 
+        (Nombre ?nombreSector)
+        (PER ?PERMedio)
+    )
+    (test (< (+ ?varAnual (* 100 ?RPD)) (+ ?v 5)))
+    =>
+    (assert (Propuesta
+        (Tipo Vender_Sobrevalorado)
+        (Nombre1 ?nombre)
+        (Nombre2 NA)
+        (RE (+ (* ?RPD -100) (/ (- ?PER ?PERMedio) (* 5 ?PER))))
+        (Explicacion (str-cat ?nombre " esta sobrevalorada, es mejor amortizar"
+            " lo invertido, ya que seguramente el PER tan alto debera bajar al"
+            " PER medio del sector en unos 5 anios, con lo que se deberia "
+            "devaluar un "(/ (- ?PER ?PERMedio) (* 5 ?PER))" anual, asi que aunque"
+            " se pierda el  RPD% de beneficios por dividendos  saldria rentable")
+            )
+    ))
+)
+
+;----------------------------------------------------------------------
+;   Es la regla encargada de proponer cambiar una inversion a valores 
+;   mas rentables. Si una empresa (empresa1) no esta sobrevalorada y  
+;   su RPD  es mayor que el (revalorizacion por semestre + RPD+1) de 
+;   una empresa de mi cartera (empresa 2) que no esta infravalorada, 
+;   proponer cambiar las acciones de una empresa por las de la otra 
+;       RE= (RPD empresa1 - (rendimiento por anio obtenido  empresa2 
+;                    + rdp empresa2 +1)
+;----------------------------------------------------------------------
+
+(defrule propuestaCambiarAMasRentable
+    (obtenerPropuestas)
+    (Empresa (Nombre ?nombre1) (RPD ?rpd1) (Porcentaje_VarSem ?varSem1))
+    (not (Sobrevalorado ?nombre1 ?explicacion))
+    (not (Cartera (Nombre ?nombre1)))
+    (Empresa (Nombre ?nombre2) (RPD ?rpd2) (Porcentaje_VarSem ?varSem2))
+    (Cartera (Nombre ?nombre2))
+    (not (Infravalorado ?nombre2 ?explicacion))
+
+    (test (< (+ (* ?rpd2 100) ?varSem2 1) (* ?rpd1 100)))
+    =>
+    (assert (Propuesta
+        (Tipo IntercambiarAMasRentable)
+        (Nombre1 ?nombre1)
+        (Nombre2 ?nombre2)
+        (RE (- (* ?rpd1 100) (+ ?varSem2 (* ?rpd2 100) 1)))
+        (Explicacion (str-cat ?nombre1 " debe tener una revalorizacion acorde con la evolucion de la bolsa. Por dividendos se espera un " 
+            (* ?rpd1 100) "% que es mas de lo que te esta dando " ?nombre2 
+            ", por eso te propongo cambiar los valores por los de esta otra " 
+            (+ ?varSem2 (* ?rpd2 100)) 
+            ". Aunque se pague el 1% del coste del cambio te saldria rentable")
+            )
+    ))
+)
+
+;----------------------------------------------------------------------
+;   Finaliza el módulo de obtención de propuestas y da paso al 
+;   módulo de presentación de propuestas
+;----------------------------------------------------------------------
+
+(defrule finPropuestas
+    (declare (salience -10))
+    ?f <- (obtenerPropuestas)
+    =>
+    (retract ?f)
+    (assert (mostrarPropuestas))
+)
