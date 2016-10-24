@@ -1,4 +1,4 @@
-# Sistema Inversor en Bolsa
+# Sistema Experto Inversor en Bolsa
 
 ##Práctica final de la asignatura de Ingeniería del Conocimiento de la UGR 2015-2016
 
