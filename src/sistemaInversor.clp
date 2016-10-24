@@ -1262,3 +1262,32 @@
     => 
     (retract ?hecho)
 )
+
+;----------------------------------------------------------------------
+;   Esta regla reinicia el ciclo principal del programa, haciendo que 
+;   el sistema vuelva a obtener los valores peligrosos, las posibles 
+;   propuestas, y hará que se vuelvan a mostrar al usuario.
+;----------------------------------------------------------------------
+
+(defrule ciclar
+    (declare (salience -15))
+    ?f <-(ActualizarPropuestas)
+    =>
+    (retract ?f)
+    (assert (moduloValoresPeligrosos))
+)
+
+;----------------------------------------------------------------------
+;   Esta regla finaliza el sistema
+;----------------------------------------------------------------------
+
+(defrule finalizarSistema
+    (propuestasMostradas ?pm)
+    ?elect <- (eleccionUsuario ?e)
+    (or (test (> ?e ?pm))
+        (test (<= ?e 0))
+        )
+    =>
+    (printout t "Finalizando el sistema" crlf "¡Hasta otra!" crlf)
+    (retract ?elect)
+)
