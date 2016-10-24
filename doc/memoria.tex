@@ -1,0 +1,333 @@
+\documentclass[10pt,spanish]{article}
+
+\usepackage[spanish]{babel}
+\usepackage[math, light]{iwona}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath, amsthm}
+\usepackage{amsfonts, amssymb, latexsym}
+\usepackage{enumerate}
+\usepackage[usenames, dvipsnames]{color}
+\usepackage{colortbl}
+% \usepackage{minted}
+\usepackage{tikz}
+\usepackage{graphicx}
+
+\usepackage[top=4cm]{geometry}
+\usepackage{cite}
+\usepackage[official]{eurosym}
+
+
+% \usepackage{titlesec}
+% \titleformat{\chapter}[display]
+% {\normalfont\huge\bfseries}{\chaptertitlename\ \thechapter}{20pt}{\Huge}
+% \titlespacing*{\chapter}{0pt}{-50pt}{40pt}
+
+\theoremstyle{plain}
+\newtheorem{exe}{Ejercicio} % reset theorem numbering for each chapter
+
+\theoremstyle{definition}
+\newtheorem{sol}{Solución}
+
+\usepackage[bookmarks=true,
+            bookmarksnumbered=false, % true means bookmarks in
+                                     % left window are numbered
+            bookmarksopen=false,     % true means only level 1
+                                     % are displayed.
+            colorlinks=true,
+            linkcolor=webblue,
+            citecolor=red]{hyperref}
+% \definecolor{webgreen}{rgb}{0, 0.5, 0} % less intense green
+\definecolor{webblue}{rgb}{0, 0, 0.5}  % less intense blue
+% \definecolor{webred}{rgb}{0.5, 0, 0}   % less intense red
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
+
+%Definimos autor y título
+\title{{\Huge Sistema Experto Inversor en Bolsa}\\{\Large Ingeniería del Conocimiento}}
+\author{Braulio Vargas López - DNI: 20079894-C}
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+\section{Resumen del Sistema Experto}
+
+Este sistema experto inversor en bolsa, es capaz de, a partir de los datos del cierre de la bolsa del Ibex 35, aconsejar al usuario qué hacer en función de la cartera que este disponga, y de cómo se consideren los valores (\textit{peligrosos}, \textit{inestables}\ldots), tal y como hace un experto en bolsa.
+
+Este sistema experto implementa el conocimiento del experto inversor y aconseja al usuario tal y como lo haría el experto. Estos consejos son la consecuencia de un proceso de razonamiento que realiza el sistema en base al conocimiento del que dispone.
+
+\section{Descripción del proceso seguido en el desarrollo}
+
+\subsection{Sesiones con el experto}
+
+Para la obtención del conocimiento, se realizaron varias reuniones con el experto. Varias de estas reuniones fueron reuniones informales con el experto, el usuario y el director del proyecto.
+
+En estas reuniones, se obtuvo información general sobre el problema, como cuál era el propósito del proyecto, qué recibiría el sistema como entrada, la salida del sistema, quien lo usaría... 
+
+En definitiva conceptos generales sobre el sistema, como pueden ser Entradas/Salidas, estructura muy general del problema, los objetivos del sistema, junto con una adquisición general de conocimientos.
+
+Estas sesiones tuviero una duración de unos 30-40 minutos.
+
+A continuación, las sesiones se centraron en entrevistas con el experto. Estas entrevistas, pretendían obtener un conocimiento más específico del experto. A lo largo de las primeras sesiones, eran entrevistas más abiertas para obtener un conocimiento, aún no específico sobre ciertos aspectos, pero si un conocimiento más técnico y útil que el que nos pueden dar los usuarios o el director del proyecto, sobre la forma de proceder del sistema. De estas sesiones, se obtuvieron procedimientos que utiliza el experto para el razonamiento durante su trabajo, conceptos específicos, una especificación más exacta de la estructura modular y, por decirlo de alguna manera, el orden del razonamiento del experto. 
+
+Con los nuevos conceptos y conocimiento adquirido, se puede generar una estructura incial del problema, seleccionar los conceptos más importantes y remarcar qué procesos de los que hace el experto, pueden parecer más importantes a la hora de razonar.
+
+Con esto, se dio paso a las siguientes reuniones con el experto, que consistían en especificar en mayor detalle los procedimientos recogidos de las sesiones anteriores, explicar con más profundidad los conceptos recogidos y verificar la utilidad de ellos, eliminar ambigüedades, verificar el conocimiento adquirido, etc.
+
+\subsection{Proceso de validación y verificación del sistema seguido}
+
+El proceso de validación y verificación seguido, consistió en varias reuniones con el experto, en las que se verificó que el sistema tenía una estructura modular y se comportaba de forma correcta. Se comprobó también, que el proceso de razonamiento que sigue el sistema es similar al que realiza el experto, hacieno uso del conocimiento que éste nos ha proporcionado. 
+
+También se comprobó que no hubiera inconsistencias en el sistema, la resistencia a fallos, que el razonamiento del sistema se pudiera seguir de forma correcta, que las explicaciones que el sistema aporta sean correctas y entendibles, que las salidas fueran las adecuadas...
+
+La interfaz también fue evaluada para ver si permitía que las salidas del sistema fueran fácilmente entendibles para el usuario y se vean cómodamente las opciones que debe proporcionar el sistema como salida.
+
+\section{Descripción del sistema}
+
+\subsection{Variables de entrada}
+
+Como variables de entrada, el sistema toma lo siguiente:
+\begin{itemize}
+    \item \textbf{Empresa}: es la representación simbólica de las empresas que están en el Ibex 35. Esta variable de entrada tiene distintos campos que representan las distintas características de las empresas. Estos valores los podemos ver a continuación:
+    \begin{enumerate}[$\diamond$]
+        \item \textbf{Nombre}: es el nombre que toma la empresa en el Ibex 35.
+        \item \textbf{Precio}: precio que tiene una acción de la empresa.
+        \item \textbf{Var\_dia}: Porcentaje de variación del valor a lo largo del día.
+        \item \textbf{Capitalización}: valor que se obtiene por la multiplicación del número de acciones de una empresa por estar en la bolsa. Se mide en miles de euros.
+        \item \textbf{PER}: \textit{Price Earning Ratio} o relación precio beneficio que produce la empresa.
+        \item \textbf{RPD}: \textit{Rentabilidad Por Dividendo} o \textit{Rendimiento Por Dividendo} es la relación existente entre los dividendos por acción repartidos por una empresa en el último año y el precio de ese título. Se mide en tanto por ciento.
+        \item \textbf{Tamaño}: representa el tamaño de la empresa. Puede tomar los valores de Pequeño ($Pequenio$), Mediano o Grande.
+        \item \textbf{Porcentaje\_IBEX}: Porcentaje en el Ibex 35.
+        \item \textbf{Etiq\_PER}: Etiqueta asociada al PER. Puede tomar los valores de $Alto$, $Medio$ o $Bajo$.
+        \item \textbf{Etiq\_RPD}: Etiqueta asociada al RPD. Puede tomar los valores de  $Alto$, $Medio$, $Bajo$.
+        \item \textbf{Sector}: Sector al que pertenece la empresa.
+        \item \textbf{Porcentaje\_Var\_5\_Dias}: Porcentaje asociado a la variación del valor durante los últimos 5 días.
+        \item \textbf{Perd\_3consec}: Este campo se activa si el valor pierde durante 3 días consecutivos o más. Cuando lleve tres días bajando de forma consecutiva, se activará y el valor de este campo pasará a ser $true$, y $false$ en caso contrario.
+        \item \textbf{Perd\_5consec}: Este campo es similar al campo anterior, pero la diferencia es que este campo se activa cuando lleva 5 días bajando.
+        \item \textbf{Perd\_VarRespSector5Dias}: Porcentaje de variación respecto al sector en los últimos 5 días.
+        \item \textbf{VRS5\_5}: Variación respecto al sector los últimos 5 días.
+        \item \textbf{Porcentaje\_VarMen}: Variación mensual del precio.
+        \item \textbf{Porcentaje\_VarTri}: Variación trimestral del precio.
+        \item \textbf{Porcentaje\_VarSem}: Variación del precio durante un semestre.
+        \item \textbf{Porcentaje\_Var12meses}: Variación del precio durante un año.
+    \end{enumerate}
+
+    \item \textbf{Sector}: en este caso, tenemos la representación simbólica de los datos pertenecientes a un sector. Estos son los distintos campos que puede tener este valor:
+    \begin{enumerate}[$\diamond$]
+        \item \textbf{Nombre}: Nombre del sector.
+        
+        \item \textbf{Var\_dia}: Porcentaje de variación del dia
+        
+        \item \textbf{Capitalizacion}: Capitalizacion en miles de euros
+        
+        \item \textbf{PER}: \textit{Price Earning Ratio} o relación precio beneficio que produce en \textbf{media} el sector.
+        
+        \item \textbf{RPD}: \textit{Rendimiento Por Dividendo} generado por un sector en \textbf{media} durante un año.
+        
+        \item \textbf{Porcentaje\_IBEX}: Porcentaje en el Ibex 35 del sector.
+        
+        \item \textbf{Porcentaje\_Var\_5\_Dias}: Porcentaje asociado a la variación del sector durante los últimos 5 días.
+        
+        \item \textbf{Perd\_3consec}: Flag que se activa si el sector pierde durante 3 días consecutivos o más.
+        
+        \item \textbf{Perd\_5consec}: Flag que se activa si el sector pierde durante 5 días consecutivos o más.
+        
+        \item \textbf{Porcentaje\_VarMen}: Variación mensual del precio.
+        
+        \item \textbf{Porcentaje\_VarTri}: Variación trimestral del precio.
+        
+        \item \textbf{Porcentaje\_VarSem}: Variación del precio durante un semestre.
+        
+        \item \textbf{Porcentaje\_Var12meses}: Variación del precio durante un año.
+    \end{enumerate}
+
+    \item \textbf{Noticias}: dado que una noticia buena o mala puede afectar a los valores de una empresa o de todo el sector según el conocimiento del experto, también disponemos de una representación para las noticias:
+    \begin{enumerate}[$\diamond$]
+        \item \textbf{Sobre}: Este campo indica a qué afecta la noticia. En caso de ser una empresa, indica el nombre de esta. Si es un sector, nos indica el nombre de este.
+        \item \textbf{Tipo}: Según el experto, sólo nos fijaremos en que si una noticia es $Buena$ o $Mala$, siendo estos los valores que puede tomar el campo. Cada uno tendrá una serie de consecuencias que se explicarán más adelante
+        \item \textbf{Antigüedad}: Es el número de días de antigüedad que tiene la noticia, siendo solo importantes para el sistema las que tienen una duración menor o igual a tres días.
+    \end{enumerate}
+
+    \item \textbf{Cartera}: es la representación simbólica de la cartera que tiene el inversor actualmente. Se representará un hecho por valor y otro especial para el dinero en metálico que tenemos. Esta representación consta de tres campos:
+    \begin{enumerate}[$\diamond$]
+        \item \textbf{Nombre}: Nombre de la empresa de la que tenemos acciones.
+        \item \textbf{Acciones}: Número de acciones que tenemos de esa empresa.
+        \item \textbf{ValorActual}: Valor real de las acciones que tenemos para esa empresa.
+    \end{enumerate}
+\end{itemize}
+
+\subsection{Variables de salida}
+
+En este caso, las variables de salida que tiene el sistema, están recogidas por un dato simbólico. Esta variable de salida son las \textbf{propuestas} que genera el sistema, como resultado del razonamiento que sigue. 
+\begin{enumerate}[$\diamond$]
+    \item \textbf{Tipo}: Representa el tipo de propuesta que genera el sistema.
+    \item \textbf{Nombre1}: Nombre de la empresa a la que afecta.
+    \item \textbf{Nombre2}: Nombre de la segunda empresa a la que afecta, si la propuesta afecta a dos empresas. En caso contrario no tendrá ningún valor asignado.
+    \item \textbf{RE}: \textit{Rendimiento esperado} que genera la propuesta.
+    \item \textbf{Explicación}: Razonamiento que ha seguido el sistema experto hasta llegar a esta propuesta y el por qué de esta propuesta.
+\end{enumerate}
+
+\subsection{Conocimiento global del sistema}
+
+Nuestro sistema tiene un conocimiento inicial de las empresas que participan en el Ibex 35, los sectores que existen, cómo está distribuida nuestra cartera y tiene conocimiento de las noticias que afectan a la economía. Pero, ¿cómo se relaciona este conocimiento?
+
+Para empezar, cada una de las empresas que conoce el sistema pertenecen a un único sector, el cual puede determinar si un valor pasa a ser \textbf{\textit{inestable}} o no desde un principio. Es decir, las empresas pertenecientes al sector de la construcción, las consideraremos desde un principio inestables, mientras que las del sector servicios, serán inestables dependiendo de las noticias que surjan, tal y como se explica a continuación.
+
+Las noticias que conoce el sistema, también pueden hacer que estas empresas, pasen a ser inestables o no, dependiendo de si son noticias negativas o no, ya que, según el conocimiento del experto, si aparece una noticia negativa que afecta a una empresa, esta pasará a ser inestable durante 3 días. Si la noticia negativa afecta a un sector, todas las empresas que pertenezcan a ese sector pasarán a ser inestables, y si la noticia afecta a la economía, todas las empresas son inestables.
+
+Las noticias positivas hacen que los valores dejen de ser inestables durante 3 días, y al igual que antes, si afectan al sector, todos los valores relacionados con este dejan de ser inestables.
+
+\subsection{Especificación de módulos}
+
+Según el experto, el sistema debe dividirse en varios módulos, teniendo una estructura modular, donde en cada uno de los módulos se realizan tareas específicas. Estos módulos, son los siguientes:
+
+\begin{enumerate}[---]
+    \item \textbf{Módulo inicial}: en este módulo, el sistema obtiene los datos sobre las distintas empresas del Ibex, junto con los datos de los sectores, las noticias y los datos de nuestra cartera. Una vez hecho esto, realiza los primeros razonamientos estableciendo qué empresas pueden ser inestables y cuales no.
+
+    \item \textbf{Módulo de inferencia sobre los valores}: tal y como indica su nombre, este módulo se encarga de obtener nuevo conocimiento sobre las empresas a partir del conocimiento inicial. Se encarga de detectar qué valores son \textbf{peligrosos} en función de los valores que tenemos en nuestra cartera y de los valores inestables que existen. También infiere qué valores son \textbf{infravalorados}\footnote{~Valores cuyo $PER$ es Bajo y su $RPD$ es alto, o bien llevaba un tiempo bajando y ha empezado a subir un poco, o es una empresa grande, su $PER$ es medio, su $RPD$ es alto, se comporta mejor que su sector.} o \textbf{sobrevalorados}\footnote{~Valores cuyo $PER$ es alto y su $RPD$ es bajo, o si son empresas pequeñas, con un $PER$ alto o medio y un $RPD$ bajo, o empresas grandes con un $RPD$ bajo y un $PER$ medio o alto, o con un $RPD$ medio y un $PER$ alto.}.
+    \item \textbf{Módulo de realización de propuestas}: en este módulo, a partir del conocimiento anterior, el sistema generará una serie de propuestas en función de los hechos que se hayan dado, del conocimiento que tenga. Una vez generadas estas propuestas, mostrará las 5 mejores propuestas, ordenadas por el \textbf{rendimiento esperado} de cada propuesta.
+
+    \item \textbf{Módulo de finalización del sistema}: se encarga de finalizar el sistema y despedirse del usuario.
+\end{enumerate}
+
+A continuación tenemos una representación del esquema concpetual del sistema:
+
+\input{modulos.tex}
+
+\subsection{Estructura de funcionamiento del esquema de razonamiento}
+
+El razonamiento del sistema sigue un esquema sencillo. Primero inicializa el módulo inicial, obteniendo todo el conocimiento del estado actual de la economía, las noticias existentes y la cartera actual. Tras esto, realiza unos primeros razonamientos, obteniendo qué empresas son inestables.
+
+A continuación, el sistema empezará a inferir qué valores son peligrosos, cuáles son infravalorados y cuáles son sobrevalorados. El objetivo de esto es obtener el conocimiento suficiente como para poder realizar propuestas que aporten el mayor rendimiento esperado y no acabar perdiendo dinero.
+
+Tras esto, el sistema comenzará a razonar para obtener unas propuestas de calidad, que dependen de nuestra cartera y de los valores deducidos anteriormente. Estas propuestas pueden ser de vender los valores peligroros que tengamos en nuestra cartera o las acciones de empresas infravaloradas de las que tengamos acciones, comprar valores infravalorados o intercambiar las acciones de una empresa por otra.
+
+Tras mostrar las 5 mejores propuestas al usuario ordenadas por rendimiento esperado, si el usuario decide aplicar alguna, el sistema experto actualizará la cartera y volverá a razonar qué valores son peligrosos o no, ya que pueden aparecer nuevos valores peligrosos. Si el usuario no aplica ninguna propuesta, finalizará el sistema.
+
+\subsection{Hechos del sistema}
+
+Los hechos con los que trabaja el sistema, son principalmente las empresas del Ibex 35, junto con su información, los sectores y la información correspondiente a cada uno de los sectores, la distribución de nuestra cartera y las noticias que surjen, como hechos iniciales. 
+
+A lo largo del razonamiento del sistema, se irán insertando en la base de hechos, los siguientes hechos:
+
+\begin{enumerate}[---]
+    \item \textbf{Inestable}: es el hecho que indica que una empresa pasa a ser inestable. Este hecho contiene el nombre de la empresa y una pequeña explicación de por qué es inestable.
+    \item \textbf{Sobrevalorado}: como su nombre indica, es el hecho que indica que una empresa está sobrevalorada. El hecho contiene el nombre de la empresa y una explicación.
+    \item \textbf{Infravalorado}: hecho que se inserta al detectar una empresa infravalorada. Contiene el nombre de esta y una explicación que indica por qué el sistema la considera infravalorada.
+    \item \textbf{Peligroso}: se inserta este hecho cuando se detecta un valor peligroso. Indica el nombre de la empresa peligrosa y una explicación acorde al hecho.
+    \item \textbf{Vender\_Peligroso}: este hecho se inserta cuando el sistema razona y obtiene una propuesta para vender un valor peligroso. Este hecho contiene el nombre de la empresa que se debe vender, el rendimiento esperado y una explicación del razonamiento.
+    \item \textbf{ComprarInfravalorado}: este hecho se inserta cuando el sistema razona y obtiene una propuesta para vender un valor peligroso. Este hecho contiene el nombre de la empresa que se debe vender, el rendimiento esperado y una explicación del razonamiento.
+    \item \textbf{Vender\_Sobrevalorado}: este hecho se inserta cuando el sistema razona y obtiene una propuesta para vender un valor sobrevalorado. Este hecho contiene el nombre de la empresa que se debe vender, el rendimiento esperado y una explicación del razonamiento.
+\end{enumerate}
+
+\subsection{Hechos y reglas específicas de cada módulo}
+
+A continuación, podemos ver qué reglas se usan en cada uno de los módulos, y qué hechos específicos de cada módulo existen.
+
+\subsubsection{Módulo inicial}
+
+En este módulo inicial, el sistema se encarga aquí cargar el conocimiento inicial del sistema, y deducir los datos inestables, como conocimiento a priori antes de continuar con los siguientes módulos.
+
+\begin{itemize}
+    \item \texttt{start}: módulo que inicia el sistema, e inserta el hecho que inicia la regla que carga el conocimiento del Ibex.
+    \item \texttt{moduloValoresInestables}: una vez cargado todo el conocimiento inicial del sistema, se lanza esta regla, que se encarga de activar el submódulo donde el sistema deduce los valores inestables.
+    \item \texttt{valoresInestablesConstruccion}: esta regla implementa el conocimiento por defecto del experto y hace que todos los valores que pertenezcan al sector de la construcción, pasen a ser inestables por defecto. Esto se indica insertando el hecho:
+    \begin{center}
+        \texttt{Inestable} \textit{nombre de la empresa}
+    \end{center}
+    junto con una pequeña explicación.
+    \item \texttt{sectorServiciosInestablePorEconomiaBajando}: esta regla implementa un nuevo conocimiento por defecto del experto y es que si la economía está bajando, todos aquellos valores pertenecientes al sector servicios, pasan a ser inestables.
+    \item \texttt{finDeteccionServiciosInestables}: finaliza este submóduloy da comienzo al submóduloy que razona en función de las noticias que se conozcan.
+    \item \texttt{detectarNoticiasNegativas}: esta regla se encarga de detectar aquellas noticias negativas que afectan a un valor en concreto y hacer que ese valor pase a ser inestable durante los próximos 3 días. En caso de que esta noticia afecte al sector, todos los valores pertenecientes al sector pasan a ser inestables, y para ello se encarga la siguiente regla:
+    \item \texttt{sectorInestable}: cuando se detecta una noticia que afecta a un sector, esta regla se encarga de hacer que todos los valores pertenecientes a este sector pasen a ser inestables.
+    \item \texttt{economiaInestable}: cuando se detecta que una noticia negativa afecta a la economía en general, todos los valores pasan a ser inestables. Cuando esta regla se dispare, se insertará en la base de hechos lo siguiente:
+    \begin{center}
+        \texttt{Inestable} \textit{nombre de la empresa}
+    \end{center}
+    \item \texttt{detectarNoticiasPositivas}: esta regla, junto con las derivadas a esta, se ejecutan a continuación de las reglas para detectar las noticias positivas. Estas noticias positivas hacen los valores a los que afectan las noticias positivas, dejen de ser inestables. 
+    \item \texttt{sectorEstable}: cuando se detecta una noticia positiva sobre un sector, hace estables los valores pertenecientes a ese sector.
+\end{itemize}
+
+\subsubsection{Modulo de inferencia sobre los valores}
+
+En este módulo, vamos a detectar los valores sobrevalorados, los infravalorados y los peligrosos. Vamos a empezar describiendo las reglas para la detección de los valroes sobrevalorados.
+
+\begin{enumerate}[---]
+    \item \texttt{detectarValoresSobrevaloradosGeneral}: inserta en la base de hechos los valores sobrevalorados que se ajustan a un conocimiento más generalizado sobre si un valor está sobrevalorado o no. En general, según el experto, un valor se considera sobrevalorado cuando su $PER$ es \textbf{Alto} y su $RPD$ es \textbf{Bajo}. Entonces se inserta el siguiente hecho en la base de conocimiento
+    \begin{center}
+        \texttt{Sobrevalorado} \textit{nombre de la empresa}
+    \end{center}
+    Junto con la explicación del razonamiento.
+    \item \texttt{detectarValoresSobrevaloradosEmpresaPequenia}: es una especialización de la regla anterior para las empresas pequeñas, que se consideran sobrevaloradas cuando su $PER$ es \textbf{Alto} y su $RPD$ es \textbf{Bajo}, al igual que antes, o cuando su su $PER$ es \textbf{Medio} y su $RPD$ es \textbf{Bajo}.
+    \item \texttt{detectarValoresSobrevaloradosEmpresaGrande}: es una nueva especialización de la primera regla para los valores sobrevalorados. En este caso, se encarga de detectar los valores sobrevalorados que son empresas grandes. En este caso, la empresa se considera sobrevalorada cuando su $PER$ es \textbf{Medio} o \textbf{Alto} y su $RPD$ es \textbf{Bajo}, o bien, su $RPD$ es \textbf{Medio} y su $PER$ es \textbf{Alto}.
+\end{enumerate}
+
+Para la detección de los valores infravalorados, tenemos las siguientes reglas:
+
+\begin{enumerate}[---]
+    \item \texttt{infravaloradoGeneral}: inserta en la base de hechos los valores infravalorados que se ajustan a un conocimiento más generalizado sobre si un valor está infravalorado o no. En general, según el experto, un valor se considera infravalorado si su $PER$ es \textbf{Bajo} y su $RPD$ es \textbf{Alto}.
+    \begin{center}
+        \texttt{Infravalorado} \textit{nombre de la empresa}
+    \end{center}
+    Junto con la explicación del razonamiento.
+    \item \texttt{detectarValoresInfravalorados}: es una especialización de la regla anterior en la que un valor se considera infravalorado cuando ha caído al menos un 30\% durante los últimos meses, tiene un $PER$ \textbf{Bajo} y que además han subido algo en el último mes, pero no mucho. 
+    \item \texttt{detectarValorInfravaloradoGrandes}: es una nueva especialización para las empresas grandes, donde se considera que un valor está infravalorado si su $RPD$ es \textbf{Alto}, su $PER$ es \textbf{Medio} y no está bajando, y se comporta mejor que su sector.
+\end{enumerate}
+
+A continuación, tenemos las reglas para detectar valores peligrosos:
+
+\begin{enumerate}[---]
+    \item \texttt{detectarValorPeligroso3dias}: en este caso, esta regla se encarga de detectar cuándo un valor es peligroso o no, en función de si existe un valor inestable del que tenemos un número de acciones, y este valor lleva tres días bajando. Entonces pasa a ser peligroso y se inserta el siguiente hecho:
+    \begin{center}
+        \texttt{Peligroso} \textit{nombre de la empresa}
+    \end{center}
+
+    \item \texttt{detectarValorPeligroso5dias}: similar a la regla anterior, solo que no necesita que el valor esté considerado como inestable, ya que, si lleva cinco días bajando de forma consecutiva, pasa a ser un valor peligroso.
+\end{enumerate}
+
+\subsubsection{Módulo de presentación de propuestas}
+
+Una vez finalizado el módulo anterior, el sistema pasará a deducir propuestas para el usuario. Para ello, el sistema consta de las siguientes reglas:
+
+\begin{enumerate}[---]
+    \item \texttt{propuestaVenderEmpresaPeligrosa}: esta regla se dispara cuando existe un valor peligroso, cuya variación respecto a su sector es menor del 3\% y está bajando durante el último mes. Entonces, se inserta en la base de hechos el siguiente hecho:
+    \begin{center}
+        (Propuesta (Tipo Vender\_Peligroso) (Nombre1 \textit{nombre de la empresa}) (Nombre2 $NA$) ($RE$) (Explicación))
+    \end{center}
+    donde $RE$ es el rendimiento esperado de esta propuesta, que se calcula como:
+    $$RE = 20 - (RPD\cdot100)$$
+    \item \texttt{propuestaInvertirInfravaloradas}: en este caso, la regla nos insertará en la base de hechos una propuesta para comprar una empresa infravalorada. Esta regla se dispara, en esencia, cuando existe una empresa infravalorada y el inversor tiene dinero para invertir en ella, y no existe su valor en la cartera. Entonces, se inserta el siguiente hecho:
+    \begin{center}
+        (Propuesta (Tipo ComprarInfravalorado) (Nombre1 \textit{nombre de la empresa}) (Nombre2 $NA$) ($RE$) (Explicación))
+    \end{center}
+    donde $RE$ se calcula como:
+    $$RE = \frac{(PER_{medio} - PER) \cdot 100}{5\cdot PER} + RPD \cdot 100$$
+    donde el $PER_{medio}$ es el $PER$ del sector. 
+    \item \texttt{propuestaVenderSobrevaloradas}: esta regla se encarga de insertar en la base de hechos el hecho que indica la propuesta de vender un valor sobrevalorado del que tengamos acciones. Esta regla se dispara cuando se detecta el valor sobrevalorado que tenemos en nuestra cartera y el rendimiento por año es menor que su valor actual mas 5, e inserta el siguiente hecho:
+    \begin{center}
+        (Propuesta (Tipo Vender\_Sobrevalorado) (Nombre1 \textit{nombre de la empresa}) (Nombre2 $NA$) ($RE$) (Explicación))
+    \end{center}
+    En este caso, el $RE$ se calcula como:$$ -RPD\cdot100 + \frac{PER - PER_{medio}}{PER \cdot 5}$$
+    \item \texttt{propuestaCambiarAMasRentable}: en este caso, esta regla se encarga de insertar en la base de hechos la propuesta de cambiar un valor por otro más rentable. Para ello, busca una empresa que no esté ni sobrevalorada ni en nuestra cartera, otra empresa de nuestra cartera, y comprueba que la primera empresa sea más rentable que la segunda. Una vez hecho esto, si la regla se dispara, inserta el siguiente hecho:
+    \begin{center}
+        (Propuesta (Tipo IntercambiarAMasRentable) (Nombre1 \textit{nombre de la empresa que no está en nuestra cartera}) (Nombre2 \textit{nombre de la empresa que está en nuestra cartera}) ($RE$) (Explicación))
+    \end{center}
+    en este caso, el $RE$ se calcula como:
+    $$RE = RPD_{\text{nueva empresa}} - (RendimientoAnual_{\text{empresa en la cartera}} +  RPD_{\text{empresa en la cartera}}\cdot 100 + 1)$$ 
+\end{enumerate}
+
+\subsubsection{Presentación de propuestas}
+
+Una vez hecho esto, el sistema calculará las cinco mejores propuestas según su $RE$, y se las mostrará al usuario. Tras esto, el usuario tendrá la opción de escoger una de ellas o salir del sistema. Si escoge una de las propuestas mostradas, existen las siguientes reglas para actualizar la cartera:
+
+\begin{enumerate}[---]
+    \item \texttt{aplicarVenta}: si se ha seleccionado una acción que conlleva una venta, esta regla aplica la propuesta escogida, eliminando de la base de hechos el hecho que indica que el valor está en nuestra cartera, la propuesta y el hecho que indica nuestro dinero disponible, e inserta un nuevo hecho con el dinero disponible actualizado.
+    \item \texttt{intercambiarValores}: en este caso, aplica la propuesta de intercambiar las acciones de una empresa por otra, y se encarga de actualizar nuestra cartera y el conocimiento asociado a ella.
+    \item \texttt{comprarValor}: si la propuesta seleccionada es comprar un valor, se inserta este valor en la cartera y este hecho en la base de conocimiento. Como el experto nos indicó, el sistema invierte solo un 5\% del dinero disponible en un nuevo valor, para no tener concentrado todo nuestro dinero en un solo valor. Tras esto se actualiza el conocimiento sobre la cartera.
+    \item \texttt{actualizarPropuestasDelSistema}: esta regla se encarga de eliminar todas las propuestas que ha deducido el sistema para poder volver al módulo que deducía los valores peligroso y recalcular nuevas propuestas, ya que al modificar el conocimiento, puede que surjan nuevas propuestas.
+\end{enumerate}
+
+En caso de que el usuario quiera salir, existe la regla \texttt{finalizarSistema} que cierra el sistema y se despide del usuario.
+
+\end{document}
