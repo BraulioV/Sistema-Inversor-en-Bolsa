@@ -11,3 +11,19 @@ Una vez hecho esto, el sistema **pasará a analizar qué valores son inestables 
 Una vez finalizado todo el proceso de razonamiento, **el sistema razonará cuáles son las mejores propuestas** que puede ofrecer y mostrará al usuario las 5 mejores, junto con una explicación de por qué ha deducido eso y le dará al usuario la opción de aplicar una de las 5 opciones o salir del sistema. 
 
 Una vez escogida una opción, el sistema actualizará la base de hechos y volverá a realizar el proceso de razonamiento para volver a ofrecer al usuario nuevas propuestas, si así lo desea.
+
+##Cómo ejecutarlo
+
+Para ejecutarlo, es necesario tener instalado `CLIPS` y hacer lo siguiente:
+
+```
+(load sistemaInversor.clp)
+(reset)
+(run)
+``` 
+
+Para compilar la memoria, tenemos que introducir en la consola lo siguiente:
+
+```
+pdflatex memoria.tex
+```
